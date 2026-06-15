@@ -1,0 +1,1 @@
+CREATE DATABASE if NOT EXISTS data_lab;
