@@ -14,6 +14,11 @@ import time
 import pandas as pd
 
 from src.extract.cbr_api import get_cbr_rates_by_date
+from src.load.clickhouse_load import(
+    delete_currency_rates_by_source_date,
+    load_currency_rates_to_clickhouse
+)
+from src.transform.cbr_transform import filter_target_currencies
 
 
 def get_date_range(
@@ -90,6 +95,10 @@ def get_cbr_rates_history(
         currency_rates_day_df = get_cbr_rates_by_date(
             request_date
         )
+        
+        currency_rates_day_df = filter_target_currencies(
+            currency_rates_day_df
+        )
 
         currency_rates_day_with_metadata_df = add_raw_metadata(
             currency_rates_day_df,
@@ -108,3 +117,40 @@ def get_cbr_rates_history(
     )
 
     return currency_rates_history_df
+
+def run_cbr_rates_pipeline(
+   start_date: date,
+   end_date: date
+) -> dict:
+   """
+   Запустить полный pipeline загрузки курсов валют ЦБ за период.
+   Шаги:
+       1. Получить данные за период.
+       2. Удалить старые данные за этот период из RAW-таблицы.
+       3. Загрузить новые данные в ClickHouse.
+   Returns
+   -------
+   dict
+       Итог выполнения pipeline.
+   """
+   currency_rates_history_df = get_cbr_rates_history(
+       start_date,
+       end_date
+   )
+   delete_result = delete_currency_rates_by_source_date(
+       start_date,
+       end_date
+   )
+   load_result = load_currency_rates_to_clickhouse(
+       currency_rates_history_df
+   )
+   pipeline_result = {
+       'pipeline_name': 'cbr_rates_pipeline',
+       'start_date': start_date,
+       'end_date': end_date,
+       'rows_loaded': load_result['rows_loaded'],
+       'status': load_result['status'],
+       'delete_result': delete_result,
+       'load_result': load_result
+   }
+   return pipeline_result

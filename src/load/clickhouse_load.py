@@ -9,7 +9,7 @@ import pandas as pd
 
 from src.common.ch_client import get_client
 
-from src.quality.cbr_checks import validate_cbr_rates_df
+
 
 
 RAW_CBR_RATES_TABLE = 'data_lab.raw_cbr_rates'
@@ -50,18 +50,6 @@ def load_currency_rates_to_clickhouse(
     """
     Загрузить курсы валют в RAW-таблицу ClickHouse.
     """
-
-    validation_result = validate_cbr_rates_df(
-        currency_rates_df
-    )
-
-    if validation_result['status'] != 'success':
-        return {
-            'table_name': RAW_CBR_RATES_TABLE,
-            'rows_loaded': 0,
-            'status': 'failed',
-            'validation_errors': validation_result['errors']
-        }
 
     clickhouse_client = get_client()
 
