@@ -19,6 +19,7 @@ from src.load.clickhouse_load import(
     load_currency_rates_to_clickhouse
 )
 from src.transform.cbr_transform import filter_target_currencies
+from src.quality.cbr_checks import validate_cbr_rates_df
 
 
 def get_date_range(
@@ -126,8 +127,12 @@ def run_cbr_rates_pipeline(
    Запустить полный pipeline загрузки курсов валют ЦБ за период.
    Шаги:
        1. Получить данные за период.
-       2. Удалить старые данные за этот период из RAW-таблицы.
-       3. Загрузить новые данные в ClickHouse.
+       2. Оставить только USD, EUR, JPY, CNY.
+       3. Добавить технические поля RAW-слоя.
+       4. Проверить качество даннных.
+       5. При ошибке качества остановить pipeline.
+       6. Удалить старые данные за этот период из RAW-таблицы.
+       7. Загрузить новые данные в ClickHouse.
    Returns
    -------
    dict
@@ -136,7 +141,22 @@ def run_cbr_rates_pipeline(
    currency_rates_history_df = get_cbr_rates_history(
        start_date,
        end_date
+   )   
+   validation_result = validate_cbr_rates_df(
+       currency_rates_history_df
    )
+   if validation_result['status'] != 'success':
+       return {
+           'pipeline_name': 'cbr_rates_pipeline',
+           'start_date': start_date,
+           'end_date': end_date,
+           'rows_loaded': 0,
+           'status': 'failed',
+           'validation_result': validation_result,
+           'delete_result': None,
+           'load_result': None
+       }
+
    delete_result = delete_currency_rates_by_source_date(
        start_date,
        end_date
@@ -150,6 +170,7 @@ def run_cbr_rates_pipeline(
        'end_date': end_date,
        'rows_loaded': load_result['rows_loaded'],
        'status': load_result['status'],
+       'validation_result': validation_result,
        'delete_result': delete_result,
        'load_result': load_result
    }
