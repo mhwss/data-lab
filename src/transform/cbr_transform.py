@@ -3,12 +3,7 @@
 """
 import pandas as pd
 
-TARGET_CURRENCY_CODES = [
-   'USD',
-   'EUR',
-   'JPY',
-   'CNY'
-]
+from src.config.settings import CBR_TARGET_CURRENCY_CODES
 
 def filter_target_currencies(
    currency_rates_df: pd.DataFrame
@@ -20,7 +15,7 @@ def filter_target_currencies(
        currency_rates_df
        .loc[
            currency_rates_df['currency_code'].isin(
-               TARGET_CURRENCY_CODES
+               CBR_TARGET_CURRENCY_CODES
            )
        ]
        .copy()

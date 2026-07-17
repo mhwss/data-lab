@@ -8,8 +8,9 @@ Pipeline для получения истории курсов валют ЦБ �
 - добавление технических полей RAW-слоя.
 """
 
-from datetime import date
+from datetime import date, timezone
 import time
+import logging
 
 import pandas as pd
 
@@ -20,6 +21,14 @@ from src.load.clickhouse_load import(
 )
 from src.transform.cbr_transform import filter_target_currencies
 from src.quality.cbr_checks import validate_cbr_rates_df
+from src.config.settings import CBR_REQUEST_DELAY_SECONDS
+
+from src.config.logging_config import configure_logging
+
+configure_logging()
+
+logger = logging.getLogger(__name__)
+
 
 
 def get_date_range(
@@ -58,7 +67,7 @@ def add_raw_metadata(
         source_date
     )
 
-    currency_rates_with_metadata_df['load_dttm'] = pd.Timestamp.now()
+    currency_rates_with_metadata_df['load_dttm'] = pd.Timestamp.now(timezone.utc)
 
     column_order = [
         'load_dttm',
@@ -110,7 +119,7 @@ def get_cbr_rates_history(
             currency_rates_day_with_metadata_df
         )
 
-        time.sleep(0.2)
+        time.sleep(CBR_REQUEST_DELAY_SECONDS)
 
     currency_rates_history_df = pd.concat(
         currency_rates_frames,
@@ -138,15 +147,39 @@ def run_cbr_rates_pipeline(
    dict
        Итог выполнения pipeline.
    """
-   currency_rates_history_df = get_cbr_rates_history(
+   current_stage = 'start'
+
+   logger.info(
+      'Запуск pipeline ЦБ за период %s - %s',
+      start_date,
+      end_date
+    )
+   try:
+      current_stage = 'extract'
+
+      currency_rates_history_df = get_cbr_rates_history(
        start_date,
        end_date
-   )   
-   validation_result = validate_cbr_rates_df(
-       currency_rates_history_df
-   )
-   if validation_result['status'] != 'success':
-       return {
+       )
+      
+      logger.info(
+          'Получено строк после extract и transform: %s',
+          len(currency_rates_history_df)
+          )
+      
+      current_stage = 'quality'
+
+      validation_result = validate_cbr_rates_df(
+          currency_rates_history_df
+          )
+      
+      if validation_result['status'] != 'success':
+        logger.error(
+            'Проверка качества не пройдена: %s',
+            validation_result['errors']
+            )
+        
+        return {
            'pipeline_name': 'cbr_rates_pipeline',
            'start_date': start_date,
            'end_date': end_date,
@@ -155,23 +188,66 @@ def run_cbr_rates_pipeline(
            'validation_result': validation_result,
            'delete_result': None,
            'load_result': None
-       }
+           }
+        
+      logger.info(
+         'Проверка качества пройдена. Количество строк: %s',
+         validation_result['row_count']
+         )
+      
+      current_stage = 'delete'
+      
+      delete_result = delete_currency_rates_by_source_date(
+         start_date=start_date,
+         end_date=end_date
+         )
+      
+      logger.info(
+         'Удаление старых данных завершено со статусом: %s',
+         delete_result['status']
+         )
+      
+      current_stage = 'load'
+      
+      load_result = load_currency_rates_to_clickhouse(
+         currency_rates_history_df
+         )
+      
+      logger.info(
+         'Загрузка завершена. Загружено строк: %s',
+         load_result['rows_loaded']
+         )
+      
+      current_stage = 'completed'
+      
+      pipeline_result = {
+         'pipeline_name': 'cbr_rates_pipeline',
+         'start_date': start_date,
+         'end_date': end_date,
+         'rows_loaded': load_result['rows_loaded'],
+         'status': load_result['status'],
+         'validation_result': validation_result,
+         'delete_result': delete_result,
+         'load_result': load_result
+         }
+      
+      logger.info('Pipeline ЦБ успешно завершен')
+      
+      return pipeline_result
+   
+   except Exception as error:
+      logger.exception(
+         'Pipeline ЦБ завершился с ошибкой на этапе %s: %s',
+         current_stage,
+         error
+      )
 
-   delete_result = delete_currency_rates_by_source_date(
-       start_date,
-       end_date
-   )
-   load_result = load_currency_rates_to_clickhouse(
-       currency_rates_history_df
-   )
-   pipeline_result = {
-       'pipeline_name': 'cbr_rates_pipeline',
-       'start_date': start_date,
-       'end_date': end_date,
-       'rows_loaded': load_result['rows_loaded'],
-       'status': load_result['status'],
-       'validation_result': validation_result,
-       'delete_result': delete_result,
-       'load_result': load_result
-   }
-   return pipeline_result
+      return{
+         'pipeline_name': 'cbr_rates_pipeline',
+         'start_date': start_date,
+         'end_date': end_date,
+         'rows_loaded': 0,
+         'status': 'failed',
+         'stage': current_stage,
+         'error': str(error)
+      }

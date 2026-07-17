@@ -8,11 +8,12 @@ from datetime import date
 import pandas as pd
 
 from src.common.ch_client import get_client
+from src.config.settings import CBR_RATES_TABLE_NAME
 
 
 
 
-RAW_CBR_RATES_TABLE = 'data_lab.raw_cbr_rates'
+CBR_RATES_TABLE_NAME
 
 def delete_currency_rates_by_source_date(
     start_date: date,
@@ -28,7 +29,7 @@ def delete_currency_rates_by_source_date(
     clickhouse_client = get_client()
 
     delete_sql = f"""
-        ALTER TABLE {RAW_CBR_RATES_TABLE}
+        ALTER TABLE {CBR_RATES_TABLE_NAME}
         DELETE
         WHERE source_date BETWEEN '{start_date}' AND '{end_date}'
     """
@@ -36,7 +37,7 @@ def delete_currency_rates_by_source_date(
     clickhouse_client.command(delete_sql)
 
     delete_result = {
-        'table_name': RAW_CBR_RATES_TABLE,
+        'table_name': CBR_RATES_TABLE_NAME,
         'start_date': start_date,
         'end_date': end_date,
         'status': 'success'
@@ -56,12 +57,12 @@ def load_currency_rates_to_clickhouse(
     rows_loaded = len(currency_rates_df)
 
     clickhouse_client.insert_df(
-        table=RAW_CBR_RATES_TABLE,
+        table=CBR_RATES_TABLE_NAME,
         df=currency_rates_df
     )
 
     load_result = {
-        'table_name': RAW_CBR_RATES_TABLE,
+        'table_name': CBR_RATES_TABLE_NAME,
         'rows_loaded': rows_loaded,
         'status': 'success'
     }

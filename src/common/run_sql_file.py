@@ -1,4 +1,8 @@
 from pathlib import Path
+import os
+
+print('Текущая директория:', os.getcwd())
+print('Файл находится:', Path(__file__).resolve())
 
 from ch_client import ch_execute, ch_select
 

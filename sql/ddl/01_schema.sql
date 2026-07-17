@@ -12,3 +12,8 @@ CREATE TABLE IF NOT EXISTS data_lab.raw_cbr_rates
 )
 ENGINE = MergeTree
 ORDER BY (rate_date, currency_code, load_dttm);
+
+CREATE TABLE IF NOT EXISTS data_lab.raw_cbr_rates_staging
+AS data_lab.raw_cbr_rates
+ENGINE = MergeTree
+ORDER BY (rate_date, currency_code, load_dttm);

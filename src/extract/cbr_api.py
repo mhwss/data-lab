@@ -19,6 +19,12 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 import requests
 
+from src.config.settings import CBR_VERIFY_SSL
+
+import logging 
+
+logger = logging.getLogger(__name__)
+
 
 CBR_URL = 'https://www.cbr.ru/scripts/XML_daily.asp'
 
@@ -40,7 +46,7 @@ def fetch_cbr_xml(request_date: date) -> str:
         CBR_URL,
         params=request_params,
         timeout=30,
-        verify=False
+        verify=CBR_VERIFY_SSL
     )
 
     cbr_api_response.raise_for_status()
