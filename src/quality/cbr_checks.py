@@ -14,7 +14,7 @@ REQUIRED_CBR_COLUMNS = [
     'currency_code',
     'currency_name',
     'nominal',
-    'rate'
+    'rate',
 ]
 
 
@@ -47,7 +47,7 @@ def validate_cbr_rates_df(
     if not missing_columns:
         key_columns = [
             'source_date',
-            'currency_code'
+            'currency_code',
         ]
 
         null_counts = (
@@ -92,7 +92,7 @@ def validate_cbr_rates_df(
     validation_result = {
         'status': 'success' if not errors else 'failed',
         'row_count': len(currency_rates_df),
-        'errors': errors
+        'errors': errors,
     }
 
     return validation_result

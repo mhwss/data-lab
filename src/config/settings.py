@@ -2,7 +2,7 @@ CBR_TARGET_CURRENCY_CODES = [
     'USD',
     'EUR',
     'JPY',
-    'CNY'
+    'CNY',
 ]
 
 CBR_REQUEST_DELAY_SECONDS = 0.2

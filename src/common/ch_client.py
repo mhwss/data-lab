@@ -1,5 +1,7 @@
 import os
+
 import clickhouse_connect
+import pandas as pd
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,21 +25,43 @@ def ch_execute(sql: str) -> None:
     client = get_client()
     client.command(sql)
 
-def ch_select(sql: str):
+def ch_select(sql: str) -> pd.DataFrame:
     """
     Выполняет SELECT и возвращает результат как pandas DataFrame.
     """
     client = get_client()
     return client.query_df(sql)
 
+def ch_insert_dataframe(
+        dataframe: pd.DataFrame,
+        table_name: str,
+) -> None:
+    """
+    Загружает DataFrame в таблицу ClickHouse
+    """
+    client = get_client()
+    client.insert_df(
+        table=table_name,
+        df=dataframe,
+    )
+
+def ch_scalar(sql: str):
+    """
+    Выполняет SQL-запрос и возвращает одно значение.
+    Для запросов:
+    - SELECT count(*)
+    - SELECT min(*)
+    - SELECT max(*)
+    """
+    client = get_client()
+
+    result = client.query(sql)
+
+    if not result.result_rows:
+        return None
+    
+    return result.result_rows[0][0]
+
 if __name__ == "__main__":
-    print(ch_execute("SELECT 1"))
-
-    df = ch_select("""
-        SELECT
-            name
-        FROM system.tables
-        LIMIT 10
-    """)
-
-    print(df)
+    result_df = ch_select("SELECT 1 AS ping")
+    print(result_df)

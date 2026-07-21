@@ -46,7 +46,7 @@ def fetch_cbr_xml(request_date: date) -> str:
         CBR_URL,
         params=request_params,
         timeout=30,
-        verify=CBR_VERIFY_SSL
+        verify=CBR_VERIFY_SSL,
     )
 
     cbr_api_response.raise_for_status()
@@ -63,7 +63,7 @@ def parse_cbr_exchange_rates(cbr_xml_text: str) -> pd.DataFrame:
 
     rate_date = pd.to_datetime(
         xml_root.attrib['Date'],
-        format='%d.%m.%Y'
+        format='%d.%m.%Y',
     )
 
     currency_rows = []
@@ -92,7 +92,7 @@ def get_cbr_rates_by_date(request_date: date) -> pd.DataFrame:
     cbr_xml_text = fetch_cbr_xml(request_date)
 
     currency_rates_df = parse_cbr_exchange_rates(
-        cbr_xml_text
+        cbr_xml_text,
     )
 
     return currency_rates_df
