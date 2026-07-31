@@ -12,28 +12,27 @@
 - загрузку в ClickHouse.
 """
 
-from datetime import date
-import urllib3
 import xml.etree.ElementTree as ET
+from datetime import date
 
 import pandas as pd
 import requests
+import urllib3
 
 from src.config.settings import CBR_VERIFY_SSL
 
-import logging 
-
-logger = logging.getLogger(__name__)
-
 
 CBR_URL = 'https://www.cbr.ru/scripts/XML_daily.asp'
+
 
 urllib3.disable_warnings(
     urllib3.exceptions.InsecureRequestWarning
 )
 
 
-def fetch_cbr_xml(request_date: date) -> str:
+def fetch_cbr_xml(
+    request_date: date,
+) -> str:
     """
     Получить XML с курсами валют ЦБ за указанную дату.
     """
@@ -54,7 +53,9 @@ def fetch_cbr_xml(request_date: date) -> str:
     return cbr_api_response.text
 
 
-def parse_cbr_exchange_rates(cbr_xml_text: str) -> pd.DataFrame:
+def parse_cbr_exchange_rates(
+    cbr_xml_text: str,
+) -> pd.DataFrame:
     """
     Преобразовать XML ЦБ в pandas DataFrame.
     """
@@ -69,30 +70,30 @@ def parse_cbr_exchange_rates(cbr_xml_text: str) -> pd.DataFrame:
     currency_rows = []
 
     for currency_xml in xml_root.findall('Valute'):
-        currency_rows.append({
-            'rate_date': rate_date,
-            'currency_code': currency_xml.findtext('CharCode'),
-            'currency_name': currency_xml.findtext('Name'),
-            'nominal': int(currency_xml.findtext('Nominal')),
-            'rate': float(
-                currency_xml.findtext('Value').replace(',', '.')
-            )
-        })
+        currency_rows.append(
+            {
+                'rate_date': rate_date,
+                'currency_code': currency_xml.findtext('CharCode'),
+                'currency_name': currency_xml.findtext('Name'),
+                'nominal': int(
+                    currency_xml.findtext('Nominal'),
+                ),
+                'rate': float(
+                    currency_xml.findtext('Value').replace(',', '.'),
+                ),
+            },
+        )
 
-    currency_rates_df = pd.DataFrame(currency_rows)
-
-    return currency_rates_df
+    return pd.DataFrame(currency_rows)
 
 
-def get_cbr_rates_by_date(request_date: date) -> pd.DataFrame:
+def get_cbr_rates_by_date(
+    request_date: date,
+) -> pd.DataFrame:
     """
     Получить курсы валют ЦБ за одну дату.
     """
 
     cbr_xml_text = fetch_cbr_xml(request_date)
 
-    currency_rates_df = parse_cbr_exchange_rates(
-        cbr_xml_text,
-    )
-
-    return currency_rates_df
+    return parse_cbr_exchange_rates(cbr_xml_text)

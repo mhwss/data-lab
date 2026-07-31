@@ -1,6 +1,11 @@
 import logging
 
+
 def configure_logging() -> None:
+    """
+    Настроить базовое логирование.
+    """
+
     logging.basicConfig(
         level=logging.INFO,
         format=(

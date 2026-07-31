@@ -19,21 +19,16 @@ REQUIRED_CBR_COLUMNS = [
 
 
 def validate_cbr_rates_df(
-    currency_rates_df: pd.DataFrame
+    currency_rates_df: pd.DataFrame,
 ) -> dict:
     """
     Проверить качество DataFrame с курсами валют.
-
-    Returns
-    -------
-    dict
-        Результат проверки.
     """
 
     errors = []
 
     if currency_rates_df.empty:
-        errors.append('DataFrame is empty')
+        errors.append('Пустой DataFrame')
 
     missing_columns = [
         column_name
@@ -42,7 +37,7 @@ def validate_cbr_rates_df(
     ]
 
     if missing_columns:
-        errors.append(f'Missing columns: {missing_columns}')
+        errors.append(f'Отсутствуют столбцы: {missing_columns}')
 
     if not missing_columns:
         key_columns = [
@@ -62,7 +57,7 @@ def validate_cbr_rates_df(
         )
 
         if columns_with_nulls:
-            errors.append(f'Null values found: {columns_with_nulls}')
+            errors.append(f'Обнаружены пропущенные значения: {columns_with_nulls}')
 
         duplicate_rows_count = (
             currency_rates_df
@@ -72,7 +67,8 @@ def validate_cbr_rates_df(
 
         if duplicate_rows_count > 0:
             errors.append(
-                f'Duplicates found by {key_columns}: {duplicate_rows_count}'
+                f'Обнаружены дубликаты по ключу '
+                f'{key_columns}: {duplicate_rows_count}'
             )
 
         invalid_rate_count = (
@@ -80,14 +76,14 @@ def validate_cbr_rates_df(
         ).sum()
 
         if invalid_rate_count > 0:
-            errors.append(f'Invalid rate values: {invalid_rate_count}')
+            errors.append(f'Обнаружены некорректные значения курса: {invalid_rate_count}')
 
         invalid_nominal_count = (
             currency_rates_df['nominal'] <= 0
         ).sum()
 
         if invalid_nominal_count > 0:
-            errors.append(f'Invalid nominal values: {invalid_nominal_count}')
+            errors.append(f'Обнаружены некорректные значения номинала: {invalid_nominal_count}')
 
     validation_result = {
         'status': 'success' if not errors else 'failed',
