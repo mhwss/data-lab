@@ -33,13 +33,11 @@ def run_sql_file(
     print(f'SQL-файл: {sql_path.resolve()}')
     print(f'Количество команд: {len(statements)}')
 
-    print('Statements count:', len(statements))
-
-    for statment_number, statement in enumerate(
+    for statement_number, statement in enumerate(
         statements, 
         start=1,
     ):
-        print(f'\nВыполняется команда {statment_number}:')
+        print(f'\nВыполняется команда {statement_number}:')
         print(statement[:200])
 
         ch_execute(statement)

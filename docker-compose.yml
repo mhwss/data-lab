@@ -1,11 +1,11 @@
 services:
   clickhouse:
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:26.2.3.2
     container_name: clickhouse
     ports:
       - "8123:8123"
       - "9000:9000"
-    
+
     environment:
       CLICKHOUSE_USER: default
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
@@ -15,9 +15,40 @@ services:
       nofile:
         soft: 262144
         hard: 262144
-    
+
     volumes:
       - clickhouse_data:/var/lib/clickhouse
+
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+
+    container_name: airflow
+    command: standalone
+
+    depends_on:
+      - clickhouse
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: "8123"
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD}
+
+      PYTHONPATH: /opt/airflow/project
+
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./src:/opt/airflow/project/src
 
 volumes:
   clickhouse_data:

@@ -11,3 +11,5 @@ data/archive/*
 !data/archive/.gitkeep
 .DS_Store
 Thumbs.db
+airflow/logs/
+*.egg-info/

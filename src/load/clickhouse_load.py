@@ -38,6 +38,7 @@ def delete_currency_rates_by_source_date(
         ALTER TABLE {table_name}
         DELETE
         WHERE source_date BETWEEN '{start_date}' AND '{end_date}'
+        SETTINGS mutations_sync = 1
     """
     ch_execute(delete_sql)
 
