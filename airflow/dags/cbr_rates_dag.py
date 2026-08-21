@@ -29,7 +29,7 @@ def cbr_rates_dag():
 
         if result['status'] != 'success':
             raise RuntimeError(
-                f'CBR pipeline failed: {result ['error']}'
+                f"CBR pipeline failed: {result ['error']}"
             )
 
         return result 
