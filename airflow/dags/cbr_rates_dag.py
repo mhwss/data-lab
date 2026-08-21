@@ -13,6 +13,7 @@ from src.pipelines.cbr_pipeline import run_cbr_rates_pipeline
     dag_id='cbr_rates',
     schedule=None,
     catchup=False,
+    max_active_runs=1,
     tags=['cbr'],
 )
 def cbr_rates_dag():

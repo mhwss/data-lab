@@ -334,11 +334,12 @@ def run_cbr_rates_pipeline(
             'load_result': load_result,
             'error': str(error),
         }
-    
-end_date = date.today()
-start_date = end_date - timedelta(weeks=1)
+
 
 if __name__ == '__main__':
+    end_date = date.today()
+    start_date = end_date - timedelta(weeks=1)
+
     result = run_cbr_rates_pipeline(
         start_date=start_date,
         end_date=end_date,
