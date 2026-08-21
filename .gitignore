@@ -13,3 +13,4 @@ data/archive/*
 Thumbs.db
 airflow/logs/
 *.egg-info/
+*.ipynb
